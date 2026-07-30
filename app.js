@@ -1427,13 +1427,21 @@ const App = (() => {
     // when it only ever meant "no account signed in on this device".
     setChip(a ? "🟢 " + a.email.split("@")[0] : "Sign in", !!a);
   }
+  // A 502/504 means the serverless function never ran (build failed, or it crashed
+  // while loading — usually a missing NETLIFY_DATABASE_URL/JWT_SECRET), so there's
+  // no JSON error body to show. Say what to check instead of a bare status code.
+  function gatewayMessage(status) {
+    if (status === 502 || status === 504) return "Server not responding — the accounts function didn't start. Open /api/health to see what's missing.";
+    if (status === 404) return "Accounts aren't deployed on this copy of the site (no server functions). Everything else still works offline.";
+    return "Request failed (" + status + ")";
+  }
   async function api(path, opts = {}) {
     const headers = { "Content-Type": "application/json" };
     if (authToken()) headers.Authorization = "Bearer " + authToken();
     const res = await fetch("/api/" + path, { ...opts, headers });
     const data = await res.json().catch(() => ({}));
     if (res.status === 401 && authToken()) { localStorage.removeItem(AUTH_KEY); initChip(); }
-    if (!res.ok) throw new Error(data.error || ("Request failed (" + res.status + ")"));
+    if (!res.ok) throw new Error(data.error || gatewayMessage(res.status));
     return data;
   }
   // Merge two progress stores: per-question newest wins, stars/notes union,

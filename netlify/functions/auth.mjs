@@ -6,9 +6,19 @@ import { SignJWT } from "jose";
 
 // The Netlify DB extension sets NETLIFY_DATABASE_URL; accept DATABASE_URL too
 // so a manually-added connection string also works.
-const sql = neon(process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL);
+//
+// Built lazily on purpose. neon() THROWS when no connection string is set, and a
+// throw at module scope means the function never loads — Netlify answers that with
+// a bare 502 that says nothing about the missing database. Deferring it keeps the
+// module importable so a missing/broken DB comes back as a readable JSON error.
+let _sql = null;
+function getSql() {
+  if (!_sql) _sql = neon(process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL);
+  return _sql;
+}
 
 async function ensureSchema() {
+  const sql = getSql();
   await sql`CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
@@ -35,9 +45,23 @@ async function makeToken(user) {
     .sign(secret);
 }
 
+const DB_MISSING = "The database isn't connected yet. In Netlify: Extensions → Netlify DB → Add database, then redeploy. Check /api/health for details.";
+
 export default async (req) => {
+  try {
+    return await handle(req);
+  } catch (e) {
+    // Last line of defence: anything that escapes here would otherwise surface as
+    // an opaque 502 from the platform instead of a message the user can act on.
+    console.error("auth: unhandled error", e);
+    return json(500, { error: "Server error — see /api/health" });
+  }
+};
+
+async function handle(req) {
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
   if (!process.env.JWT_SECRET) return json(500, { error: "Server not configured (JWT_SECRET missing)" });
+  if (!(process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL)) return json(503, { error: DB_MISSING });
   let body;
   try { body = await req.json(); } catch { return json(400, { error: "Invalid JSON" }); }
   const action = body.action;
@@ -46,7 +70,13 @@ export default async (req) => {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 254) return json(400, { error: "Invalid email" });
   if (password.length < 8 || password.length > 200) return json(400, { error: "Password must be 8–200 characters" });
 
-  await ensureSchema();
+  const sql = getSql();
+  try {
+    await ensureSchema();
+  } catch (e) {
+    console.error("auth: schema/connection failure", e);
+    return json(503, { error: "Can't reach the database. If it was never claimed in Netlify it may have expired — check /api/health." });
+  }
 
   if (action === "register") {
     const hash = await bcrypt.hash(password, 10);
@@ -63,7 +93,13 @@ export default async (req) => {
   }
 
   if (action === "login") {
-    const rows = await sql`SELECT id, email, password_hash FROM users WHERE email = ${email}`;
+    let rows;
+    try {
+      rows = await sql`SELECT id, email, password_hash FROM users WHERE email = ${email}`;
+    } catch (e) {
+      console.error("auth: login query failed", e);
+      return json(503, { error: "Can't reach the database — check /api/health." });
+    }
     // Constant-shape response either way; bcrypt.compare on a dummy hash when no user keeps timing similar.
     const user = rows[0];
     const ok = user ? await bcrypt.compare(password, user.password_hash)
@@ -74,6 +110,6 @@ export default async (req) => {
   }
 
   return json(400, { error: "Unknown action" });
-};
+}
 
 export const config = { path: "/api/auth" };

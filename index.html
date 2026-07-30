@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#4f6df5">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css?v=4">
+<title>LCSW Exam Prep</title>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <h1 class="brand" onclick="App.go('home')">LCSW <span>Exam Prep</span></h1>
+    <div class="pill sync-chip" id="sync-chip" onclick="App.go('account')">Sign in</div>
+  </div>
+</div>
+<nav class="tabbar" id="tabbar">
+  <button class="tab active" data-tab="home" onclick="App.go('home')"><span class="ti">🏠</span><span class="tl">Home</span></button>
+  <button class="tab" data-tab="practice" onclick="App.go('practice')"><span class="ti">✏️</span><span class="tl">Practice</span></button>
+  <button class="tab" data-tab="sprint" onclick="App.go('sprint')"><span class="ti">🎯</span><span class="tl">Sprint</span></button>
+  <button class="tab" data-tab="learn" onclick="App.go('learn')"><span class="ti">🧠</span><span class="tl">Learn</span></button>
+  <button class="tab" data-tab="progress" onclick="App.go('stats')"><span class="ti">📊</span><span class="tl">Progress</span></button>
+</nav>
+<div class="wrap">
+  <main id="view"></main>
+</div>
+
+<!-- ══════════════ QUESTION BANKS ══════════════
+     To add more questions later: create a new file in data/ following
+     the format in README.md, then add a <script> line here. -->
+<script src="data/bank-crisis.js?v=4"></script>
+<script src="data/bank-dsm.js?v=4"></script>
+<script src="data/bank-ethics.js?v=4"></script>
+<script src="data/bank-mock1.js?v=4"></script>
+<script src="data/bank-pretest.js?v=4"></script>
+<script src="data/bank-quizyourself.js?v=4"></script>
+<script src="data/bank-fullmock1.js?v=4"></script>
+<script src="data/bank-fullmock2.js?v=5"></script>
+<script src="data/bank-theoryrec.js?v=6"></script>
+<script src="data/bank-aswb.js?v=10"></script>
+<script src="data/bank-medications.js?v=4"></script>
+<script src="data/strategy-exemplars.js?v=12"></script>
+<!-- ══════════════ END QUESTION BANKS ══════════════ -->
+
+<script src="meds-data.js?v=4"></script>
+<script src="theory-data.js?v=13"></script>
+<script src="strategy-data.js?v=13"></script>
+<script src="sprint-data.js?v=3"></script>
+<script src="coach-data.js?v=15"></script>
+<script src="app.js?v=4"></script>
+<script>
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+</script>
+</body>
+</html>

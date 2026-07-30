@@ -1,0 +1,11 @@
+{
+  "name": "lcsw-exam-prep",
+  "version": "2.0.0",
+  "private": true,
+  "description": "LCSW study platform v2 — static PWA + Netlify Functions + Netlify DB (Neon Postgres)",
+  "dependencies": {
+    "@netlify/neon": "^0.1.0",
+    "bcryptjs": "^2.4.3",
+    "jose": "^5.9.6"
+  }
+}

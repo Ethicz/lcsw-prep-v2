@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "bricks-skills": {
+      "source": {
+        "source": "github",
+        "repo": "codeerhq/bricks-skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "bricks@bricks-skills": true
+  }
+}
